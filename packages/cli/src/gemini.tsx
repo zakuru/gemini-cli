@@ -236,6 +236,39 @@ export async function startInteractiveUI(
       }
     }, []);
 
+    useEffect(() => {
+      const handler = () => {
+        // Failsafe: If cleanup hangs, exit anyway.
+        const exitTimeout = setTimeout(() => process.exit(0), 500);
+
+        if (
+          appRef.current &&
+          wsRef.current &&
+          wsRef.current.readyState === WebSocket.OPEN
+        ) {
+          const state = appRef.current.getState();
+          wsRef.current.send(
+            JSON.stringify({ type: 'state', payload: state }),
+            () => {
+              runExitCleanup().then(() => {
+                clearTimeout(exitTimeout);
+                process.exit(0);
+              });
+            },
+          );
+        } else {
+          runExitCleanup().then(() => {
+            clearTimeout(exitTimeout);
+            process.exit(0);
+          });
+        }
+      };
+      process.on('SIGUSR2', handler);
+      return () => {
+        process.off('SIGUSR2', handler);
+      };
+    }, []);
+
     const kittyProtocolStatus = useKittyKeyboardProtocol();
 
     return (
@@ -475,6 +508,11 @@ export async function main() {
       // Set this as early as possible to avoid spurious characters from
       // input showing up in the output.
       process.stdin.setRawMode(true);
+      registerCleanup(() => {
+        if (process.stdin.isTTY) {
+          process.stdin.setRawMode(wasRaw);
+        }
+      });
 
       // This cleanup isn't strictly needed but may help in certain situations.
       process.on('SIGTERM', () => {

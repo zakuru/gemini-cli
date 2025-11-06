@@ -73,7 +73,7 @@ const baseConfig = {
   write: true,
 };
 
-export function getBuildOptions(watch = false, onRebuild) {
+export function getBuildOptions(watch = false, onRebuild, onInitialBuildEnd) {
   const cliConfig = {
     ...baseConfig,
     banner: {
@@ -111,6 +111,7 @@ export function getBuildOptions(watch = false, onRebuild) {
     const rebuildPlugin = {
       name: 'rebuild-logger',
       setup(build) {
+        let isInitialBuild = true;
         const outfile = build.initialOptions.outfile;
         build.onStart(() => {
           console.log(`[${outfile}] build started`);
@@ -120,11 +121,13 @@ export function getBuildOptions(watch = false, onRebuild) {
             console.error(`[${outfile}] build failed:`, result.errors);
           } else {
             console.log(`[${outfile}] build succeeded`);
-            if (
-              onRebuild &&
-              build.initialOptions.outfile === 'bundle/gemini.js'
-            ) {
-              onRebuild();
+            if (build.initialOptions.outfile === 'bundle/gemini.js') {
+              if (isInitialBuild) {
+                isInitialBuild = false;
+                onInitialBuildEnd?.();
+              } else {
+                onRebuild?.();
+              }
             }
           }
         });

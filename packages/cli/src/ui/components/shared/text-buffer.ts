@@ -1580,12 +1580,6 @@ export function useTextBuffer({
     initialState,
   );
 
-  useEffect(() => {
-    if (initialText) {
-      dispatch({ type: 'set_text', payload: initialText });
-    }
-  }, [initialText]);
-
   const {
     lines,
     cursorRow,

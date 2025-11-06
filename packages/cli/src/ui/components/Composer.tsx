@@ -157,7 +157,7 @@ export const Composer = () => {
           placeholder={
             vimEnabled
               ? "  Press 'i' for INSERT mode and 'Esc' for NORMAL mode."
-              : ' Type your message or @path/to/file another change'
+              : ' Type your message or @path/to/file'
           }
           setQueueErrorMessage={uiActions.setQueueErrorMessage}
           streamingState={uiState.streamingState}

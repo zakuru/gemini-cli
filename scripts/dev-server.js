@@ -28,17 +28,17 @@ let state = {
 };
 
 wss.on('connection', (ws) => {
+  let hydrated = false;
   console.log('Client connected');
-  ws.send(JSON.stringify({ type: 'state', payload: state }));
+  if (!hydrated) {
+    ws.send(JSON.stringify({ type: 'state', payload: state }));
+    hydrated = true;
+  }
 
   ws.on('message', (message) => {
     const { type, payload } = JSON.parse(message);
     if (type === 'state') {
       state = payload;
-    } else if (type === 'state-saved') {
-      if (process.send) {
-        process.send('state-saved');
-      }
     }
   });
 

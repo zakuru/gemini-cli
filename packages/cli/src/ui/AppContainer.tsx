@@ -337,10 +337,20 @@ export const AppContainer = React.forwardRef(
       shellModeActive,
     });
 
+    const { history, loadHistory } = historyManager;
+    const { text, setText } = buffer;
+
+    useEffect(() => {
+      if (initialState) {
+        loadHistory(initialState.history);
+        setText(initialState.inputText);
+      }
+    }, [initialState, loadHistory, setText]);
+
     useImperativeHandle(ref, () => ({
       getState: () => ({
-          history: historyManager.history,
-          inputText: buffer.text,
+          history,
+          inputText: text,
         }),
     }));
     useEffect(() => {
