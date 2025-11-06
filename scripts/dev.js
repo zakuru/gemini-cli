@@ -6,59 +6,94 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { spawn } from 'node:child_process';
 import { context } from 'esbuild';
+import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { getBuildOptions } from '../esbuild.config.js';
 
-let childProcess;
+let childProcess = null;
+
+// Start the dev server in a separate process.
+const serverProcess = spawn('node', ['scripts/dev-server.js'], {
+  stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+  detached: true,
+});
+
+let serverReady = false;
+
+serverProcess.on('message', (message) => {
+  if (message === 'ready') {
+    serverReady = true;
+    startApp();
+  }
+});
+
+serverProcess.on('close', (code) => {
+  if (!serverReady) {
+    console.error(`Dev server exited with code ${code}`);
+    process.exit(1);
+  }
+});
+
+serverProcess.on('error', (err) => {
+  console.error('Failed to start dev server.', err);
+  process.exit(1);
+});
+
+// Timeout if the server doesn't start in a reasonable time.
+setTimeout(() => {
+  if (!serverReady) {
+    console.error('Dev server timed out.');
+    process.exit(1);
+  }
+}, 5000);
+
 let isRestarting = false;
 
 function startApp() {
   if (isRestarting) {
-    return; // Don't stack up restarts
+    return;
   }
 
   if (childProcess) {
     isRestarting = true;
-    // Listen for the 'exit' event to know when it's safe to start the new process.
     childProcess.once('exit', () => {
       childProcess = null;
       isRestarting = false;
-      startApp(); // Re-call startApp to spawn the new process.
+      startApp();
     });
 
     try {
-      // Kill the entire process group with SIGKILL for a more forceful termination.
       process.kill(-childProcess.pid, 'SIGKILL');
     } catch (_e) {
-      // If killing fails (e.g., process already gone), just proceed with the restart.
+      // Ignore if process is already gone
+      childProcess = null;
       isRestarting = false;
       startApp();
     }
   } else {
-    // This is the case where we actually spawn the process.
-    // Clear the console to prevent UI ghosting from the previous run.
-    process.stdout.write('\x1Bc');
+    // No process running, so let's start one.
+    process.stdout.write('\x1Bc'); // Clear console
     console.log('Starting the app...');
-    childProcess = spawn('node', ['bundle/gemini.js'], {
+    childProcess = spawn('node', ['--enable-source-maps', 'bundle/gemini.js'], {
       stdio: 'inherit',
-      detached: true, // Create a new process group.
+      detached: true,
+      env: { ...process.env, GEMINI_DEV_MODE: 'true' },
     });
+
     childProcess.on('error', (err) => {
       console.error('Failed to start subprocess.', err);
-      childProcess = null; // Ensure we can restart if the process fails to start.
+      childProcess = null;
     });
   }
 }
 
 function cleanup() {
   if (childProcess) {
-    try {
-      process.kill(-childProcess.pid);
-    } catch (_e) {
-      // Ignore
-    }
+    childProcess.kill();
+  }
+  if (serverProcess) {
+    serverProcess.kill();
   }
 }
 

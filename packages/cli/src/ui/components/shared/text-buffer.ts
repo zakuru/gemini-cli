@@ -1579,6 +1579,13 @@ export function useTextBuffer({
       textBufferReducer(s, a, { inputFilter, singleLine }),
     initialState,
   );
+
+  useEffect(() => {
+    if (initialText) {
+      dispatch({ type: 'set_text', payload: initialText });
+    }
+  }, [initialText]);
+
   const {
     lines,
     cursorRow,

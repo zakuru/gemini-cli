@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { render } from 'ink';
-import { AppContainer } from './ui/AppContainer.js';
+import { AppContainer, type DevState } from './ui/AppContainer.js';
+import WebSocket from 'ws';
 import { loadCliConfig, parseArguments } from './config/config.js';
 import * as cliConfig from './config/config.js';
 import { readStdin } from './utils/readStdin.js';
@@ -184,7 +185,59 @@ export async function startInteractiveUI(
 
   // Create wrapper component to use hooks inside render
   const AppWrapper = () => {
+    const appRef = useRef<{ getState: () => DevState }>(null);
+    const [initialState, setInitialState] = useState<DevState | undefined>();
+    const wsRef = useRef<WebSocket | null>(null);
+
+    useEffect(() => {
+      if (process.env['GEMINI_DEV_MODE']) {
+        const ws = new WebSocket('ws://localhost:8080');
+        wsRef.current = ws;
+        let saveInterval: NodeJS.Timeout | null = null;
+
+        const saveState = () => {
+          if (
+            appRef.current &&
+            wsRef.current &&
+            wsRef.current.readyState === WebSocket.OPEN
+          ) {
+            const state = appRef.current.getState();
+            wsRef.current.send(
+              JSON.stringify({ type: 'state', payload: state }),
+            );
+          }
+        };
+
+        ws.on('open', () => {
+          // State is requested by the server on connection.
+          saveInterval = setInterval(saveState, 500);
+        });
+
+        ws.on('message', (message) => {
+          const { type, payload } = JSON.parse(message.toString());
+          if (type === 'state') {
+            setInitialState(payload);
+          }
+        });
+
+        ws.on('close', () => {
+          if (saveInterval) {
+            clearInterval(saveInterval);
+          }
+        });
+
+        return () => {
+          if (saveInterval) {
+            clearInterval(saveInterval);
+          }
+          saveState(); // Save one last time
+          ws.close();
+        };
+      }
+    }, []);
+
     const kittyProtocolStatus = useKittyKeyboardProtocol();
+
     return (
       <SettingsContext.Provider value={settings}>
         <KeypressProvider
@@ -202,11 +255,13 @@ export async function startInteractiveUI(
               <SessionStatsProvider>
                 <VimModeProvider settings={settings}>
                   <AppContainer
+                    ref={appRef}
                     config={config}
                     settings={settings}
                     startupWarnings={startupWarnings}
                     version={version}
                     initializationResult={initializationResult}
+                    initialState={initialState}
                   />
                 </VimModeProvider>
               </SessionStatsProvider>

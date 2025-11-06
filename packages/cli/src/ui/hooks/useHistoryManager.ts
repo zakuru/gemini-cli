@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import type { HistoryItem } from '../types.js';
 
 // Type for the updater function passed to updateHistoryItem
@@ -29,9 +29,17 @@ export interface UseHistoryManagerReturn {
  * Encapsulates the history array, message ID generation, adding items,
  * updating items, and clearing the history.
  */
-export function useHistory(): UseHistoryManagerReturn {
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+export function useHistory(
+  initialHistory?: HistoryItem[],
+): UseHistoryManagerReturn {
+  const [history, setHistory] = useState<HistoryItem[]>(initialHistory || []);
   const messageIdCounterRef = useRef(0);
+
+  useEffect(() => {
+    if (initialHistory) {
+      setHistory(initialHistory);
+    }
+  }, [initialHistory]);
 
   // Generates a unique message ID based on a timestamp and a counter.
   const getNextMessageId = useCallback((baseTimestamp: number): number => {

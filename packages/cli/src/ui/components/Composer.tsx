@@ -4,29 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Box, Text, useIsScreenReaderEnabled } from 'ink';
-import { LoadingIndicator } from './LoadingIndicator.js';
-import { ContextSummaryDisplay } from './ContextSummaryDisplay.js';
-import { AutoAcceptIndicator } from './AutoAcceptIndicator.js';
-import { ShellModeIndicator } from './ShellModeIndicator.js';
-import { DetailedMessagesDisplay } from './DetailedMessagesDisplay.js';
-import { RawMarkdownIndicator } from './RawMarkdownIndicator.js';
-import { InputPrompt } from './InputPrompt.js';
-import { Footer } from './Footer.js';
-import { ShowMoreLines } from './ShowMoreLines.js';
-import { QueuedMessageDisplay } from './QueuedMessageDisplay.js';
-import { OverflowProvider } from '../contexts/OverflowContext.js';
-import { theme } from '../semantic-colors.js';
-import { isNarrowWidth } from '../utils/isNarrowWidth.js';
-import { useUIState } from '../contexts/UIStateContext.js';
-import { useUIActions } from '../contexts/UIActionsContext.js';
-import { useVimMode } from '../contexts/VimModeContext.js';
-import { useConfig } from '../contexts/ConfigContext.js';
-import { useSettings } from '../contexts/SettingsContext.js';
 import { ApprovalMode } from '@google/gemini-cli-core';
-import { StreamingState } from '../types.js';
+import { Box, Text, useIsScreenReaderEnabled } from 'ink';
 import { ConfigInitDisplay } from '../components/ConfigInitDisplay.js';
+import { useConfig } from '../contexts/ConfigContext.js';
+import { OverflowProvider } from '../contexts/OverflowContext.js';
+import { useSettings } from '../contexts/SettingsContext.js';
+import { useUIActions } from '../contexts/UIActionsContext.js';
+import { useUIState } from '../contexts/UIStateContext.js';
+import { useVimMode } from '../contexts/VimModeContext.js';
+import { theme } from '../semantic-colors.js';
+import { StreamingState } from '../types.js';
+import { isNarrowWidth } from '../utils/isNarrowWidth.js';
+import { AutoAcceptIndicator } from './AutoAcceptIndicator.js';
+import { ContextSummaryDisplay } from './ContextSummaryDisplay.js';
+import { DetailedMessagesDisplay } from './DetailedMessagesDisplay.js';
+import { Footer } from './Footer.js';
+import { InputPrompt } from './InputPrompt.js';
+import { LoadingIndicator } from './LoadingIndicator.js';
 import { TodoTray } from './messages/Todo.js';
+import { QueuedMessageDisplay } from './QueuedMessageDisplay.js';
+import { RawMarkdownIndicator } from './RawMarkdownIndicator.js';
+import { ShellModeIndicator } from './ShellModeIndicator.js';
+import { ShowMoreLines } from './ShowMoreLines.js';
 
 export const Composer = () => {
   const config = useConfig();
@@ -157,7 +157,7 @@ export const Composer = () => {
           placeholder={
             vimEnabled
               ? "  Press 'i' for INSERT mode and 'Esc' for NORMAL mode."
-              : '  Type your message or @path/to/file'
+              : ' Type your message or @path/to/file another change'
           }
           setQueueErrorMessage={uiActions.setQueueErrorMessage}
           streamingState={uiState.streamingState}
