@@ -1579,6 +1579,7 @@ export function useTextBuffer({
       textBufferReducer(s, a, { inputFilter, singleLine }),
     initialState,
   );
+
   const {
     lines,
     cursorRow,
