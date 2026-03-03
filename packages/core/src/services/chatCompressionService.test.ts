@@ -185,6 +185,9 @@ describe('ChatCompressionService', () => {
       getHookSystem: () => undefined,
       getNextCompressionTruncationId: vi.fn().mockReturnValue(1),
       getTruncateToolOutputThreshold: vi.fn().mockReturnValue(40000),
+      modelConfigService: {
+        getResolvedConfig: vi.fn().mockReturnValue({ model: 'gemini-2.5-flash-lite' }),
+      },
       storage: {
         getProjectTempDir: vi.fn().mockReturnValue(testTempDir),
       },

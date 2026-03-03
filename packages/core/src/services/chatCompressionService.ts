@@ -51,6 +51,12 @@ const COMPRESSION_PRESERVE_THRESHOLD = 0.3;
 const COMPRESSION_FUNCTION_RESPONSE_TOKEN_BUDGET = 50_000;
 
 /**
+ * Safety buffer for summarization requests to account for system prompts,
+ * reasoning overhead, and estimation errors.
+ */
+const SUMMARIZATION_TOKEN_BUFFER = 50_000;
+
+/**
  * Returns the index of the oldest item to keep when compressing. May return
  * contents.length which indicates that everything should be compressed.
  *
@@ -337,10 +343,32 @@ export class ChatCompressionService {
       originalHistoryToCompress.flatMap((c) => c.parts || []),
     );
 
-    const historyForSummarizer =
-      originalToCompressTokenCount < tokenLimit(model)
-        ? originalHistoryToCompress
-        : historyToCompressTruncated;
+    const summarizerAlias = modelStringToModelConfigAlias(model);
+    const { model: summarizerModel } =
+      config.modelConfigService.getResolvedConfig({
+        model: summarizerAlias,
+      });
+    const summarizerTokenLimit = tokenLimit(summarizerModel);
+
+    let historyForSummarizer: Content[];
+    if (
+      originalToCompressTokenCount + SUMMARIZATION_TOKEN_BUFFER <
+      summarizerTokenLimit
+    ) {
+      historyForSummarizer = originalHistoryToCompress;
+    } else {
+      // If we are close to the limit, perform a more accurate token count before falling back to truncated history.
+      const accurateTokenCount = await calculateRequestTokenCount(
+        originalHistoryToCompress.flatMap((c) => c.parts || []),
+        config.getContentGenerator(),
+        summarizerModel,
+      );
+
+      historyForSummarizer =
+        accurateTokenCount + SUMMARIZATION_TOKEN_BUFFER < summarizerTokenLimit
+          ? originalHistoryToCompress
+          : historyToCompressTruncated;
+    }
 
     const hasPreviousSnapshot = historyForSummarizer.some((c) =>
       c.parts?.some((p) => p.text?.includes('<state_snapshot>')),
