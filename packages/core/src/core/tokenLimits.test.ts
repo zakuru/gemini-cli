@@ -12,17 +12,24 @@ import {
   DEFAULT_GEMINI_MODEL,
   PREVIEW_GEMINI_FLASH_MODEL,
   PREVIEW_GEMINI_MODEL,
+  PREVIEW_GEMINI_3_1_MODEL,
+  PREVIEW_GEMINI_3_1_CUSTOM_TOOLS_MODEL,
 } from '../config/models.js';
+import { PRO_TOKEN_LIMIT } from './tokenLimits.js';
 
 describe('tokenLimit', () => {
   it('should return the correct token limit for default models', () => {
-    expect(tokenLimit(DEFAULT_GEMINI_MODEL)).toBe(1_048_576);
+    expect(tokenLimit(DEFAULT_GEMINI_MODEL)).toBe(PRO_TOKEN_LIMIT);
     expect(tokenLimit(DEFAULT_GEMINI_FLASH_MODEL)).toBe(1_048_576);
     expect(tokenLimit(DEFAULT_GEMINI_FLASH_LITE_MODEL)).toBe(1_048_576);
   });
 
   it('should return the correct token limit for preview models', () => {
-    expect(tokenLimit(PREVIEW_GEMINI_MODEL)).toBe(1_048_576);
+    expect(tokenLimit(PREVIEW_GEMINI_MODEL)).toBe(PRO_TOKEN_LIMIT);
+    expect(tokenLimit(PREVIEW_GEMINI_3_1_MODEL)).toBe(PRO_TOKEN_LIMIT);
+    expect(tokenLimit(PREVIEW_GEMINI_3_1_CUSTOM_TOOLS_MODEL)).toBe(
+      PRO_TOKEN_LIMIT,
+    );
     expect(tokenLimit(PREVIEW_GEMINI_FLASH_MODEL)).toBe(1_048_576);
   });
 
